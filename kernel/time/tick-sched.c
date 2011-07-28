@@ -450,9 +450,13 @@ out:
 static void __tick_nohz_idle_enter(struct tick_sched *ts)
 {
 	ktime_t now;
+	int was_stopped = ts->tick_stopped;
 
 	now = tick_nohz_start_idle(smp_processor_id(), ts);
 	tick_nohz_stop_sched_tick(ts, now);
+
+	if (!was_stopped && ts->tick_stopped)
+		ts->idle_jiffies = ts->last_jiffies;
 }
 
 /**
@@ -558,14 +562,25 @@ static void tick_nohz_restart(struct tick_sched *ts, ktime_t now)
 
 static void tick_nohz_restart_sched_tick(struct tick_sched *ts, ktime_t now)
 {
-#ifndef CONFIG_VIRT_CPU_ACCOUNTING
-	unsigned long ticks;
-#endif
 	/* Update jiffies first */
 	tick_do_update_jiffies64(now);
 	update_cpu_load_nohz();
 
+	calc_load_exit_idle();
+	touch_softlockup_watchdog();
+	/*
+	 * Cancel the scheduled timer and restore the tick
+	 */
+	ts->tick_stopped  = 0;
+	ts->idle_exittime = now;
+
+	tick_nohz_restart(ts, now);
+}
+
+static void tick_nohz_account_idle_ticks(struct tick_sched *ts)
+{
 #ifndef CONFIG_VIRT_CPU_ACCOUNTING
+	unsigned long ticks;
 	/*
 	 * We stopped the tick in idle. Update process times would miss the
 	 * time we slept as update_process_times does only a 1 tick
@@ -578,16 +593,6 @@ static void tick_nohz_restart_sched_tick(struct tick_sched *ts, ktime_t now)
 	if (ticks && ticks < LONG_MAX)
 		account_idle_ticks(ticks);
 #endif
-
-	calc_load_exit_idle();
-	touch_softlockup_watchdog();
-	/*
-	 * Cancel the scheduled timer and restore the tick
-	 */
-	ts->tick_stopped  = 0;
-	ts->idle_exittime = now;
-
-	tick_nohz_restart(ts, now);
 }
 
 /**
@@ -615,8 +620,10 @@ void tick_nohz_idle_exit(void)
 	if (ts->idle_active)
 		tick_nohz_stop_idle(cpu, now);
 
-	if (ts->tick_stopped)
+	if (ts->tick_stopped) {
 		tick_nohz_restart_sched_tick(ts, now);
+		tick_nohz_account_idle_ticks(ts);
+	}
 
 	local_irq_enable();
 }
