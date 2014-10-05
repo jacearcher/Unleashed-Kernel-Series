@@ -1750,12 +1750,9 @@ static void try_to_wake_up_local(struct task_struct *p)
 {
 	struct rq *rq = task_rq(p);
 
-	if (rq != this_rq() || p == current) {
-		printk_sched("%s: Failed to wakeup task %d (%s), rq = %p, this_rq = %p, p = %p, current = %p\n",
-			__func__, task_pid_nr(p), p->comm, rq,
-			this_rq(), p, current);
+	if (WARN_ON(rq != this_rq()) ||
+	    WARN_ON(p == current))
 		return;
-	}
 
 	lockdep_assert_held(&rq->lock);
 
@@ -5647,10 +5644,8 @@ done:
 	ret = 1;
 fail:
 	double_rq_unlock(rq_src, rq_dest);
-
-	notify = task_notify_on_migrate(p);
-
 	raw_spin_unlock(&p->pi_lock);
+
 	if (moved && task_notify_on_migrate(p)) {
 		struct migration_notify_data mnd;
 
