@@ -388,8 +388,6 @@
 		CALL(sys_process_vm_readv)
 		CALL(sys_process_vm_writev)
 /* FEATURE_SDCARD_MEDIAEXN_SYSTEMCALL_ENCRYPTION [S] */
-		CALL(sys_set_media_property)
-/* 379 */	CALL(sys_set_media_ext)
 /* FEATURE_SDCARD_MEDIAEXN_SYSTEMCALL_ENCRYPTION [E] */
 		CALL(sys_sched_setattr)
 		CALL(sys_sched_getattr)

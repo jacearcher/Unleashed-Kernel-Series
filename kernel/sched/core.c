@@ -1647,6 +1647,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
 {
 	unsigned long flags;
 	int cpu, src_cpu, success = 0;
+	bool notify = false;
 
 	/*
 	 * If we are going to wake up a thread waiting for CONDITION we
