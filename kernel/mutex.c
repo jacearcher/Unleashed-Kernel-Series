@@ -112,16 +112,18 @@ EXPORT_SYMBOL(mutex_lock);
  * We don't inline mspin_lock() so that perf can correctly account for the
  * time spent in this lock function.
  */
-struct mspin_node {
-	struct mspin_node *next ;
-	int		  locked;	/* 1 if lock acquired */
-};
-#define	MLOCK(mutex)	((struct mspin_node **)&((mutex)->spin_mlock))
+typedef struct mspin_node {
+	struct mspin_node *next;
+	int		   locked;	/* 1 if lock acquired */
+} mspin_node_t;
 
-static noinline
-void mspin_lock(struct mspin_node **lock, struct mspin_node *node)
+typedef mspin_node_t	*mspin_lock_t;
+
+#define	MLOCK(mutex)	((mspin_lock_t *)&((mutex)->spin_mlock))
+
+static noinline void mspin_lock(mspin_lock_t *lock,  mspin_node_t *node)
 {
-	struct mspin_node *prev;
+	mspin_node_t *prev;
 
 	/* Init node */
 	node->locked = 0;
@@ -140,9 +142,9 @@ void mspin_lock(struct mspin_node **lock, struct mspin_node *node)
 		cpu_read_relax();
 }
 
-static void mspin_unlock(struct mspin_node **lock, struct mspin_node *node)
+static void mspin_unlock(mspin_lock_t *lock,  mspin_node_t *node)
 {
-	struct mspin_node *next = ACCESS_ONCE(node->next);
+	mspin_node_t *next = ACCESS_ONCE(node->next);
 
 	if (likely(!next)) {
 		/*
