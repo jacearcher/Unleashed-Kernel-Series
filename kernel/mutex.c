@@ -202,12 +202,12 @@ int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 	return lock->owner == NULL;
 }
 
-/*
- * Initial check for entering the mutex spinning loop
- */
-static inline int mutex_can_spin_on_owner(struct mutex *lock)
+int mutex_can_spin_on_owner(struct mutex *lock)
 {
 	int retval = 1;
+
+	if (!sched_feat(OWNER_SPIN))
+		return 0;
 
 	rcu_read_lock();
 	if (lock->owner)
@@ -295,7 +295,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 
 	for (;;) {
 		struct task_struct *owner;
-		struct mspin_node  node;
+		mspin_node_t	    node;
 
 		/*
 		 * If there's an owner, wait for it to either
