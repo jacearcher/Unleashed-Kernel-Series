@@ -1481,7 +1481,7 @@ ttwu_do_wakeup(struct rq *rq, struct task_struct *p, int wake_flags)
 		p->sched_class->task_woken(rq, p);
 
 	if (rq->idle_stamp) {
-		u64 delta = rq_clock(rq) - rq->idle_stamp;
+		u64 delta = rq->clock - rq->idle_stamp;
 		u64 max = 2*rq->max_idle_balance_cost;
 
 		update_avg(&rq->avg_idle, delta);
@@ -7785,9 +7785,9 @@ void __init sched_init(void)
 		rq->avg_idle = 2*sysctl_sched_migration_cost;
 		rq->max_idle_balance_cost = sysctl_sched_migration_cost;
 #if defined(CONFIG_SCHED_FREQ_INPUT) || defined(CONFIG_SCHED_HMP)
-		rq->cur_freq = 1;
-		rq->max_freq = 1;
-		rq->min_freq = 1;
+		rq->cur_freq = 0;
+		rq->max_freq = 0;
+		rq->min_freq = 0;
 		rq->max_possible_freq = 1;
 		rq->cumulative_runnable_avg = 0;
 #endif
