@@ -4794,50 +4794,6 @@ int can_nice(const struct task_struct *p, const int nice)
 		capable(CAP_SYS_NICE));
 }
 
-#ifdef __ARCH_WANT_SYS_NICE
-
-/*
- * sys_nice - change the priority of the current process.
- * @increment: priority increment
- *
- * sys_setpriority is a more generic, but much slower function that
- * does similar things.
- */
-SYSCALL_DEFINE1(nice, int, increment)
-{
-	long nice, retval;
-	if (!ccs_capable(CCS_SYS_NICE))
-		return -EPERM;
-
-	/*
-	 * Setpriority might change our priority at the same moment.
-	 * We don't have to worry. Conceptually one call occurs first
-	 * and we have a single winner.
-	 */
-	if (increment < -40)
-		increment = -40;
-	if (increment > 40)
-		increment = 40;
-
-	nice = TASK_NICE(current) + increment;
-	if (nice < -20)
-		nice = -20;
-	if (nice > 19)
-		nice = 19;
-
-	if (increment < 0 && !can_nice(current, nice))
-		return -EPERM;
-
-	retval = security_task_setnice(current, nice);
-	if (retval)
-		return retval;
-
-	set_user_nice(current, nice);
-	return 0;
-}
-
-#endif
-
 /**
  * task_prio - return the priority value of a given task.
  * @p: the task in question.
