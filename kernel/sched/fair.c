@@ -5481,7 +5481,7 @@ static inline void update_sd_lb_stats(struct lb_env *env,
 	if (child && child->flags & SD_PREFER_SIBLING)
 		prefer_sibling = 1;
 
-	load_idx = get_sd_load_idx(sd, idle);
+	load_idx = get_sd_load_idx(env->sd, env->idle);
 
 	do {
 		int local_group;
@@ -6419,9 +6419,14 @@ static struct {
 	unsigned long next_balance;     /* in jiffy units */
 } nohz ____cacheline_aligned;
 
-static inline int find_new_ilb(int call_cpu)
+static inline int find_new_ilb(int cpu, int type)
 {
-	int ilb = cpumask_first(nohz.idle_cpus_mask);
+	int ilb;
+
+	if (sched_enable_hmp)
+		return find_new_hmp_ilb(cpu, type);
+
+	ilb = cpumask_first(nohz.idle_cpus_mask);
 
 	if (ilb < nr_cpu_ids && idle_cpu(ilb))
 		return ilb;
