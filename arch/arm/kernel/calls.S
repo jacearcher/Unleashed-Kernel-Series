@@ -43,7 +43,6 @@
 		CALL(sys_ni_syscall)		/* was sys_stty */
 		CALL(sys_ni_syscall)		/* was sys_getty */
 		CALL(sys_access)
-		CALL(sys_nice)
 /* 35 */	CALL(sys_ni_syscall)		/* was sys_ftime */
 		CALL(sys_sync)
 		CALL(sys_kill)
